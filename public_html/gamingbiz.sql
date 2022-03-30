@@ -75,7 +75,7 @@ CREATE TABLE ConsolesBought
     ownedSince  date,
     price       int NOT NULL,
     PRIMARY KEY (sinNumber),
-    FOREIGN KEY (cid) REFERENCES Customer
+    FOREIGN KEY (cid) REFERENCES Customer ON DELETE CASCADE
 );
 
 CREATE TABLE ConsolesSold
@@ -144,7 +144,7 @@ CREATE TABLE GamesBought
     companyID int,
     price     int NOT NULL,
     PRIMARY KEY (cid, gameID, companyID),
-    FOREIGN KEY (cid) REFERENCES Customer,
+    FOREIGN KEY (cid) REFERENCES Customer ON DELETE CASCADE,
     FOREIGN KEY (gameID, companyID) REFERENCES GameProduced
 );
 
