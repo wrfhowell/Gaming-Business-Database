@@ -23,7 +23,7 @@
 
     <body>
         <h2>Reset</h2>
-        <p>If you wish to reset the table press on the reset button. If this is the first time you're running this page, you MUST use reset</p>
+        <p>If you wish to reset the tables, follow the instructions on the reset button.</p>
 
         <form method="POST" action="gaming-operations.php">
             <!-- if you want another page to load after the button is clicked, you have to specify that page in the action parameter -->
@@ -178,6 +178,19 @@
             echo "</table>";
         }
 
+        function printCustomerSpending($result) {
+            echo "<br>Retrieved data from table CustomerSpending:<br>";
+            echo "<table>";
+            echo "<tr><th>Spent On Games</th><th>Spent On Consoles</th><th>Total Spent</th></tr>";
+
+            while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
+                echo "<tr><td>" . $row[0] . "</td><td>" . $row[1] . "</td>" .
+                     "<td>" . $row[2] . "</td></tr>"; //or just use "echo $row[0]"
+            }
+
+            echo "</table>";
+        }
+
         function connectToDB() {
             global $db_conn;
 
@@ -216,76 +229,8 @@
 
         function handleResetRequest() {
             global $db_conn;
-            // Drop old table
-            executePlainSQL("DROP TABLE MembershipDetails CASCADE CONSTRAINTS");
-            executePlainSQL("DROP TABLE MembershipOwned CASCADE CONSTRAINTS");
-            executePlainSQL("DROP TABLE CustomerSpending CASCADE CONSTRAINTS");
-            executePlainSQL("DROP TABLE Customer CASCADE CONSTRAINTS");
-            executePlainSQL("DROP TABLE ConsolesBought CASCADE CONSTRAINTS");
-
             // Create new table
-            $query = "CREATE TABLE MembershipDetails
-            (
-                membershipLevel  char(30),
-                personalDiscount int,
-                PRIMARY KEY (membershipLevel)
-            )";
-            executePlainSQL($query);
-
-            $query = "CREATE TABLE MembershipOwned
-            (
-                totalSpent      int      DEFAULT 0,
-                membershipLevel char(30),
-                PRIMARY KEY (totalSpent),
-                FOREIGN KEY (membershipLevel) REFERENCES MembershipDetails
-            )";
-            executePlainSQL($query);
-            
-            $query = "CREATE TABLE CustomerSpending
-            (
-                spentOnGames    int,
-                spentOnConsoles	int,
-                totalSpent		int,
-                PRIMARY KEY (spentOnGames, spentOnConsoles),
-                FOREIGN KEY (totalSpent) REFERENCES MembershipOwned
-            )";
-            executePlainSQL($query);
-
-            $query = "CREATE TABLE Customer
-            (
-                cid             int,
-                firstName       char(30),
-                lastName        char(30),
-                phoneNumber     int UNIQUE,
-                email           varchar(80) UNIQUE,
-                spentOnGames    int DEFAULT 0,
-                spentOnConsoles int DEFAULT 0,
-                PRIMARY KEY (cid),
-                UNIQUE (phoneNumber, email),
-                FOREIGN KEY (spentOnGames, spentOnConsoles) REFERENCES CustomerSpending
-                    ON DELETE SET NULL)";
-            executePlainSQL($query);
-
-            $query = "CREATE TABLE ConsolesBought
-            (
-                sinNumber   int,
-                consoleName varchar(30),
-                releaseDate date,
-                cid         int NOT NULL,
-                ownedSince  date,
-                price       int NOT NULL,
-                PRIMARY KEY (sinNumber),
-                FOREIGN KEY (cid) REFERENCES Customer ON DELETE CASCADE
-            )";
-            executePlainSQL($query);
-
-            executePlainSQL("INSERT INTO MembershipDetails VALUES('bronze', 10)");
-            executePlainSQL("INSERT INTO MembershipOwned VALUES(10, 'bronze')");
-            executePlainSQL("INSERT INTO CustomerSpending VALUES(10, 100, 10)");
-            executePlainSQL("INSERT INTO Customer VALUES(123, 'Emily', 'Lee', 6041234567, 'elee@gmail.com', 10, 100)");
-            executePlainSQL("INSERT INTO Customer VALUES(124, 'Amanda', 'Lee', 6043214567, 'alee@gmail.com', 10, 100)");
-            executePlainSQL("INSERT INTO ConsolesBought VALUES (10000000, 'Xbox 360', DATE'2010-12-05', 123, DATE'2012-06-27', 278)");
-            echo "<br> Creating New Tables <br>";
+            echo "<br> To Reset, Manually Reenter 'START gamingbiz.sql' into SQLPlus<br>";
             OCICommit($db_conn);
         }
 
@@ -307,8 +252,24 @@
                 $tuple
             );
 
+            $total_spent = $_POST['customerSpentGames'] + $_POST['customerSpentConsoles'];
+            echo "<br> The total spent is: " . $total_spent . "<br>";
+            if ($total_spent >= 1000) {
+                $qualify_amount = 1000;
+            } else if ($total_spent >= 500) {
+                $qualify_amount = 500;
+            } else if ($total_spent >= 250) {
+                $qualify_amount = 250;
+            } else {
+                $qualify_amount = 10;
+            }
+            
+            executePlainSQL("INSERT INTO CustomerSpending VALUES (" . $_POST['customerSpentGames'] . ",
+                            " . $_POST['customerSpentConsoles'] . ", " . $qualify_amount . ")");
+
             executeBoundSQL("INSERT INTO Customer VALUES (:bind1, :bind2, :bind3, :bind4,
                             :bind5, :bind6, :bind7)", $alltuples);
+                            
             OCICommit($db_conn);
         }
 
@@ -341,6 +302,10 @@
             $result = executePlainSQL("SELECT * FROM ConsolesBought");
 
             printConsolesBought($result);
+
+            $result = executePlainSQL("SELECT * FROM CustomerSpending");
+
+            printCustomerSpending($result);
         }      
 
         // HANDLE ALL POST ROUTES
@@ -374,7 +339,7 @@
         }
 
 		if (isset($_POST['reset']) || isset($_POST['updateSubmit']) || isset($_POST['insertCustomer']) 
-        || isset($_POST['removeCustomer']) || isset($POST['updateCustomer'])) {
+        || isset($_POST['removeCustomer']) || isset($_POST['updateCustomer'])) {
             handlePOSTRequest();
         } else if (isset($_GET['countTupleRequest']) || isset($_GET['displayCustomersRequest'])) {
             handleGETRequest();
