@@ -72,6 +72,31 @@
             <input type="submit" name="displayCustomers"></p>
         </form>
 
+        <hr />
+
+        <h2>Find Average Customer Spending</h2>
+        <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="averageSpending" name="averageSpending">
+            <input type="submit" name="averageSpending"></p>
+        </form>
+
+        <hr />
+
+        <h2>Find Popular Consoles</h2>
+        <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="popularConsoles" name="popularConsoles">
+            <input type="submit" name="popularConsoles"></p>
+        </form>
+
+        <hr />
+
+        <h2>Customers Who Own this Console</h2>
+        <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="customerConsoles" name="customerConsoles">
+            Console (eg. PS5): <input type="text" name="consoleName"> <br /><br />
+            <input type="submit" name="customerConsoles"></p>
+        </form>
+
         <?php
 		//this tells the system that it's no longer just parsing html; it's now parsing PHP
 
@@ -292,6 +317,65 @@
         //     }
         // }
 
+        function handleAggregateRequest() {
+            global $db_conn;
+
+            $result = executePlainSQL("SELECT AVG(Sum) FROM (SELECT *, SUM(customerSpentGames +       customerSpentConsoles) AS Sum 
+            FROM Customer)"); ///? double check this is correct
+
+            printAvg($result);
+        }
+
+        function printAvg($result) {
+            echo "<br>Average Customer Spending: $<br>";
+            echo $result;
+            // is this correct derek?
+        }
+
+        function handlePopularConsoles() {
+            global $db_conn;
+
+            $result = executePlainSQL("SELECT  consoleName, COUNT(*) FROM ConsolesBought, GROUP BY consoleName");
+
+            printPopularConsoles($result);
+        }
+
+        function printPopularConsoles($result) {
+            echo "<br>Retrieved popular consoles: <br>";
+            echo "<table>";
+            echo "<tr><th>Console</th><th>Number Sold</th></tr>";
+
+            while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
+                echo "<tr><td>" . $row[0] . "</td><td>" . $row[1] .
+                     "</td></tr>"; 
+            }
+
+            echo "</table>";
+        }
+
+        function handleCustomerConsoles() {
+            global $db_conn;
+
+            $console_name = $_GET['consoleName'];
+
+            $result = executePlainSQL("SELECT Customer.cid, Customer.firstName, Customer.lastName FROM Customer INNER JOIN ConsolesBought ON Customer.cid = ConsolesBought.cid WHERE ConsolesBought.ConsoleName =  " . $console_name);
+            
+            printCustomerConsoles($result);
+        }
+
+        function printCustomerConsoles($result) {
+            echo "<br>Customer who have bought queried console:  <br>";
+            echo "<table>";
+            echo "<tr><th>Customer ID</th><th>First Name</th><th>Last Name></th></tr>";
+
+            while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
+                echo "<tr><td>" . $row[0] . "</td><td>" . $row[1] . "</td><td>" . $row[2] .
+                     "</td></tr>"; 
+            }
+
+            echo "</table>";
+        }
+
         function handleDisplayRequest() {
             global $db_conn;
 
@@ -333,6 +417,12 @@
                     handleCountRequest();
                 } else if (array_key_exists('displayCustomers', $_GET)) {
                     handleDisplayRequest();
+                } else if (array_key_exists('averageSpending', $_GET)) {
+                    handleAggregateRequest();
+                } else if (array_key_exists('popularConsoles', $_GET)) {
+                    handlePopularConsoles();
+                } else if (array_key_exists('customerConsoles', $_GET)) {
+                    handleCustomerConsoles();
                 }
                 disconnectFromDB();
             }
