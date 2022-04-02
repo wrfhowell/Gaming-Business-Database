@@ -76,7 +76,7 @@
 
         <h2>Find Average Customer Spending</h2>
         <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="averageSpending" name="averageSpending">
+            <input type="hidden" id="averageSpendingRequest" name="averageSpendingRequest">
             <input type="submit" name="averageSpending"></p>
         </form>
 
@@ -84,7 +84,7 @@
 
         <h2>Find Popular Consoles</h2>
         <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="popularConsoles" name="popularConsoles">
+            <input type="hidden" id="popularConsolesRequest" name="popularConsolesRequest">
             <input type="submit" name="popularConsoles"></p>
         </form>
 
@@ -92,7 +92,7 @@
 
         <h2>Customers Who Own this Console</h2>
         <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="customerConsoles" name="customerConsoles">
+            <input type="hidden" id="customerConsolesRequest" name="customerConsolesRequest">
             Console (eg. PS5): <input type="text" name="consoleName"> <br /><br />
             <input type="submit" name="customerConsoles"></p>
         </form>
@@ -307,35 +307,22 @@
             OCICommit($db_conn);
         }
 
-        // function handleCountRequest() {
-        //     global $db_conn;
-
-        //     $result = executePlainSQL("SELECT Count(*) FROM demoTable");
-
-        //     if (($row = oci_fetch_row($result)) != false) {
-        //         echo "<br> The number of tuples in demoTable: " . $row[0] . "<br>";
-        //     }
-        // }
-
         function handleAggregateRequest() {
             global $db_conn;
 
-            $result = executePlainSQL("SELECT AVG(Sum) FROM (SELECT *, SUM(customerSpentGames +       customerSpentConsoles) AS Sum 
-            FROM Customer)"); ///? double check this is correct
-
-            printAvg($result);
+            $result = executePlainSQL("SELECT AVG(spentOnGames + spentOnConsoles) FROM Customer");
+            printAverageSpent($result);
         }
 
-        function printAvg($result) {
-            echo "<br>Average Customer Spending: $<br>";
-            echo $result;
-            // is this correct derek?
+        function printAverageSpent($result) {
+            $row = OCI_Fetch_Array($result, OCI_BOTH);
+            echo "<br>Average Customer Spending: $$row[0]<br>";
         }
 
         function handlePopularConsoles() {
             global $db_conn;
 
-            $result = executePlainSQL("SELECT  consoleName, COUNT(*) FROM ConsolesBought, GROUP BY consoleName");
+            $result = executePlainSQL("SELECT consoleName, COUNT(*) FROM ConsolesBought GROUP BY consoleName");
 
             printPopularConsoles($result);
         }
@@ -358,15 +345,15 @@
 
             $console_name = $_GET['consoleName'];
 
-            $result = executePlainSQL("SELECT Customer.cid, Customer.firstName, Customer.lastName FROM Customer INNER JOIN ConsolesBought ON Customer.cid = ConsolesBought.cid WHERE ConsolesBought.ConsoleName =  " . $console_name);
+            $result = executePlainSQL("SELECT Customer.cid, firstName, lastName FROM Customer INNER JOIN ConsolesBought ON Customer.cid=ConsolesBought.cid WHERE ConsolesBought.consoleName='" . $console_name . "'");
             
             printCustomerConsoles($result);
         }
 
         function printCustomerConsoles($result) {
-            echo "<br>Customer who have bought queried console:  <br>";
+            echo "<br>Customer who have bought the queried console:  <br>";
             echo "<table>";
-            echo "<tr><th>Customer ID</th><th>First Name</th><th>Last Name></th></tr>";
+            echo "<tr><th>Customer ID</th><th>First Name</th><th>Last Name</th></tr>";
 
             while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
                 echo "<tr><td>" . $row[0] . "</td><td>" . $row[1] . "</td><td>" . $row[2] .
@@ -431,7 +418,9 @@
 		if (isset($_POST['reset']) || isset($_POST['updateSubmit']) || isset($_POST['insertCustomer']) 
         || isset($_POST['removeCustomer']) || isset($_POST['updateCustomer'])) {
             handlePOSTRequest();
-        } else if (isset($_GET['countTupleRequest']) || isset($_GET['displayCustomersRequest'])) {
+        } else if (isset($_GET['countTupleRequest']) || isset($_GET['displayCustomersRequest'])
+        || isset($_GET['averageSpendingRequest']) || isset($_GET['popularConsolesRequest'])
+        || isset($_GET['customerConsolesRequest'])) {
             handleGETRequest();
         }
 		?>
