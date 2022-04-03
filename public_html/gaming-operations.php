@@ -66,10 +66,40 @@
 
         <hr />
 
-        <h2>Display the Customers</h2>
+        <h2>Find Customer Information</h2>
+        <form method="GET" action="gaming-operations.php">
+            <input type="hidden" id="findCustomerRequest" name="findCustomerRequest">
+            <input type="checkbox" id="findCID" name="findCid" value="cid">
+            <label for="findCID">Customer ID</label><br>
+            <input type="checkbox" id="findFirstName" name="findFirstName" value="firstName">
+            <label for="findFirstName">First Name</label><br>
+            <input type="checkbox" id="findLastName" name="findLastName" value="lastName">
+            <label for="findLastName">Last Name</label><br>
+            <input type="checkbox" id="findPhone" name="findPhone" value="phoneNumber">
+            <label for="findPhone">Phone Number</label><br>
+            <input type="checkbox" id="findEmail" name="findEmail" value="email">
+            <label for="findEmail">Email</label><br>
+            <input type="checkbox" id="findSpentOnGames" name="findSpentOnGames" value="spentOnGames">
+            <label for="findSpentOnGames">Spent On Games</label><br>
+            <input type="checkbox" id="findSpentOnConsoles" name="findSpentOnConsoles" value="spentOnConsoles">
+            <label for="findSpentOnConsoles">Spent On Consoles</label><br/><br/>
+            <input type="submit" name="findCustomer"></p>
+        </form>
+
+        <hr />
+
+        <h2>Customers Who Own this Console</h2>
         <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="displayCustomersRequest" name="displayCustomersRequest">
-            <input type="submit" name="displayCustomers"></p>
+            <label for ="consoles">Console:</label>
+            <input type="hidden" id="customerConsolesRequest" name="customerConsolesRequest">
+            <select name="consoleName">
+                <option value="Xbox 360">Xbox 360</option>
+                <option value="Nintendo Wii">Nintendo Wii</option>
+                <option value="Nintendo Switch">Nintendo Switch</option>
+                <option value="PS3">PS3</option>
+                <option value="PS5">PS5</option>
+            </select>
+            <input type="submit" name="customerConsoles"></p>
         </form>
 
         <hr />
@@ -82,7 +112,7 @@
 
         <hr />
 
-        <h2>Find Popular Consoles</h2>
+        <h2>Find Amount of Consoles Sold</h2>
         <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
             <input type="hidden" id="popularConsolesRequest" name="popularConsolesRequest">
             <input type="submit" name="popularConsoles"></p>
@@ -90,12 +120,21 @@
 
         <hr />
 
-        <h2>Customers Who Own this Console</h2>
-        <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="customerConsolesRequest" name="customerConsolesRequest">
-            Console (eg. PS5): <input type="text" name="consoleName"> <br /><br />
-            <input type="submit" name="customerConsoles"></p>
+        <h2>Find Customers Who Own All The Consoles</h2>
+        <form method="GET" action="gaming-operations.php">
+            <input type="hidden" id="allConsolesOwnedRequest" name="allConsolesOwnedRequest">
+            <input type="submit" name="allConsolesOwned"></p>
         </form>
+
+        <hr />
+
+        <h2>Display the Customers</h2>
+        <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="displayCustomersRequest" name="displayCustomersRequest">
+            <input type="submit" name="displayCustomers"></p>
+        </form>
+
+        <hr />
 
         <?php
 		//this tells the system that it's no longer just parsing html; it's now parsing PHP
@@ -172,13 +211,29 @@
             }
         }
 
-        function printResult($result) { //prints results from a select statement
-            echo "<br>Retrieved data from table Customers:<br>";
-            echo "<table>";
-            echo "<tr><th>customerID</th><th>First Name</th><th>Last Name</th><th>Phone Number</th>
-                      <th>Email</th><th>Spent On Games</th><th>Spent On Consoles</th></tr>";
+        function printCustomerResults($result) { //prints results from a select statement
+            $table_header = "<tr>";
 
-            while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
+            if (isset($_GET['findCid'])) {$table_header .= "<th>Customer ID</th>";}
+            if (isset($_GET['findFirstName'])) {$table_header .= "<th>First Name</th>";}
+            if (isset($_GET['findLastName'])) {$table_header .= "<th>Last Name</th>";}
+            if (isset($_GET['findPhone'])) {$table_header .= "<th>Phone Number</th>";}
+            if (isset($_GET['findEmail'])) {$table_header .= "<th>Email<th/>";}
+            if (isset($_GET['findSpentOnGames'])) {$table_header .= "<th>Spent On Games</th>";}
+            if (isset($_GET['findSpentOnConsoles'])) {$table_header .= "<th>Spent On Consoles</th>";}
+
+            if ($table_header == "<tr>") {
+                $table_header = "<th>customerID</th><th>First Name</th><th>Last Name</th><th>Phone Number</th>
+                          <th>Email</th><th>Spent On Games</th><th>Spent On Consoles</th>";
+            }
+
+            $table_header .= "</tr>";
+            
+            echo "<br>Selected Customer Information:<br>";
+            echo "<table>";
+            echo " $table_header ";
+
+            while ($row = OCI_Fetch_Array($result, OCI_BOTH + OCI_RETURN_NULLS)) {
                 echo "<tr><td>" . $row[0] . "</td><td>" . $row[1] . "</td>" .
                      "<td>" . $row[2] . "</td><td>" . $row[3] . "</td>" .
                      "<td>" . $row[4] . "</td><td>" . $row[5] . "</td>" .
@@ -189,7 +244,7 @@
         }
 
         function printConsolesBought($result) { //prints results from a select statement
-            echo "<br>Retrieved data from table ConsolesBought:<br>";
+            echo "<br>All Consoles Bought:<br>";
             echo "<table>";
             echo "<tr><th>SIN Number</th><th>Console Name</th><th>Release Date</th><th>Customer ID</th>
                       <th>Owned Since</th><th>Price</th></tr>";
@@ -204,7 +259,7 @@
         }
 
         function printCustomerSpending($result) {
-            echo "<br>Retrieved data from table CustomerSpending:<br>";
+            echo "<br>All Records of Customer Spending:<br>";
             echo "<table>";
             echo "<tr><th>Spent On Games</th><th>Spent On Consoles</th><th>Total Spent</th></tr>";
 
@@ -239,17 +294,6 @@
 
             debugAlertMessage("Disconnect from Database");
             OCILogoff($db_conn);
-        }
-
-        function handleUpdateRequest() {
-            global $db_conn;
-
-            $customer_ID = $_POST['customerIDUpdate'];
-            $new_email = $_POST['customerEmailUpdate'];
-            
-            // you need the wrap the old name and new name values with single quotations
-            executePlainSQL("UPDATE Customer SET email='" . $new_email . "' WHERE cid='" . $customer_ID . "'");
-            OCICommit($db_conn);
         }
 
         function handleResetRequest() {
@@ -307,6 +351,58 @@
             OCICommit($db_conn);
         }
 
+        function handleUpdateRequest() {
+            global $db_conn;
+
+            $customer_ID = $_POST['customerIDUpdate'];
+            $new_email = $_POST['customerEmailUpdate'];
+            
+            executePlainSQL("UPDATE Customer SET email='" . $new_email . "' WHERE cid='" . $customer_ID . "'");
+            OCICommit($db_conn);
+        }
+
+        function handleFindCustomerRequest() {
+            global $db_conn;
+            $select = "";
+
+            if (isset($_GET['findCid'])) {$select .= ",cid";}
+            if (isset($_GET['findFirstName'])) {$select .= ",firstName";}
+            if (isset($_GET['findLastName'])) {$select .= ",lastName";}
+            if (isset($_GET['findPhone'])) {$select .= ",phoneNumber";}
+            if (isset($_GET['findEmail'])) {$select .= ",email";}
+            if (isset($_GET['findSpentOnGames'])) {$select .= ",spentOnGames";}
+            if (isset($_GET['findSpentOnConsoles'])) {$select .= ",spentOnConsoles";}
+
+            $select = substr($select, 1);
+            if ($select == "") {$select = "*";}
+            
+            $result = executePlainSQL("SELECT " . $select . " FROM Customer");
+            printCustomerResults($result);
+        }
+
+        function handleCustomerConsoles() {
+            global $db_conn;
+
+            $console_name = $_GET['consoleName'];
+
+            $result = executePlainSQL("SELECT Customer.cid, firstName, lastName FROM Customer INNER JOIN ConsolesBought ON Customer.cid=ConsolesBought.cid WHERE ConsolesBought.consoleName='" . $console_name . "'");
+            
+            printCustomerConsoles($result);
+        }
+
+        function printCustomerConsoles($result) {
+            echo "<br>Customer who have bought the queried console:  <br>";
+            echo "<table>";
+            echo "<tr><th>Customer ID</th><th>First Name</th><th>Last Name</th></tr>";
+
+            while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
+                echo "<tr><td>" . $row[0] . "</td><td>" . $row[1] . "</td><td>" . $row[2] .
+                     "</td></tr>"; 
+            }
+
+            echo "</table>";
+        }
+
         function handleAggregateRequest() {
             global $db_conn;
 
@@ -340,18 +436,23 @@
             echo "</table>";
         }
 
-        function handleCustomerConsoles() {
+        function handleAllConsolesOwned() {
             global $db_conn;
-
-            $console_name = $_GET['consoleName'];
-
-            $result = executePlainSQL("SELECT Customer.cid, firstName, lastName FROM Customer INNER JOIN ConsolesBought ON Customer.cid=ConsolesBought.cid WHERE ConsolesBought.consoleName='" . $console_name . "'");
             
-            printCustomerConsoles($result);
+            $result = executePlainSQL(
+                "SELECT Customer.cid, firstName, lastName
+                 FROM Customer
+                 WHERE NOT EXISTS
+                 ((SELECT ConsolesBought.consoleName FROM ConsolesBought) 
+                   MINUS
+                   (SELECT ConsolesBought.consoleName FROM ConsolesBought
+                    WHERE Customer.cid=ConsolesBought.cid))");
+
+            printAllConsolesOwned($result);
         }
 
-        function printCustomerConsoles($result) {
-            echo "<br>Customer who have bought the queried console:  <br>";
+        function printAllConsolesOwned($result) {
+            echo "<br>Customer who have bought all consoles:  <br>";
             echo "<table>";
             echo "<tr><th>Customer ID</th><th>First Name</th><th>Last Name</th></tr>";
 
@@ -368,7 +469,7 @@
 
             $result = executePlainSQL("SELECT * FROM Customer");
 
-            printResult($result);
+            printCustomerResults($result);
 
             $result = executePlainSQL("SELECT * FROM ConsolesBought");
 
@@ -377,7 +478,7 @@
             $result = executePlainSQL("SELECT * FROM CustomerSpending");
 
             printCustomerSpending($result);
-        }      
+        }
 
         // HANDLE ALL POST ROUTES
 	// A better coding practice is to have one method that reroutes your requests accordingly. It will make it easier to add/remove functionality.
@@ -410,6 +511,10 @@
                     handlePopularConsoles();
                 } else if (array_key_exists('customerConsoles', $_GET)) {
                     handleCustomerConsoles();
+                } else if (array_key_exists('allConsolesOwned', $_GET)) {
+                    handleAllConsolesOwned();
+                } else if (array_key_exists('findCustomer', $_GET)) {
+                    handleFindCustomerRequest();
                 }
                 disconnectFromDB();
             }
@@ -420,7 +525,8 @@
             handlePOSTRequest();
         } else if (isset($_GET['countTupleRequest']) || isset($_GET['displayCustomersRequest'])
         || isset($_GET['averageSpendingRequest']) || isset($_GET['popularConsolesRequest'])
-        || isset($_GET['customerConsolesRequest'])) {
+        || isset($_GET['customerConsolesRequest']) || isset($_GET['allConsolesOwnedRequest'])
+        || isset($_GET['findCustomerRequest'])) {
             handleGETRequest();
         }
 		?>
