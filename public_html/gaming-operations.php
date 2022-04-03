@@ -1,15 +1,4 @@
-<!--Test Oracle file for UBC CPSC304 2018 Winter Term 1
-  Created by Jiemin Zhang
-  Modified by Simona Radu
-  Modified by Jessica Wong (2018-06-22)
-  This file shows the very basics of how to execute PHP commands
-  on Oracle.
-  Specifically, it will drop a table, create a table, insert values
-  update values, and then query for values
-
-  IF YOU HAVE A TABLE CALLED "demoTable" IT WILL BE DESTROYED
-
-  The script assumes you already have a server set up
+<!--The script assumes you already have a server set up
   All OCI commands are commands to the Oracle libraries
   To get the file to work, you must place it somewhere where your
   Apache server can run it, and you must rename it to have a ".php"
@@ -62,6 +51,16 @@
             Customer ID: <input type="text" name="customerIDUpdate"> <br /><br />
             New Email: <input type="text" name="customerEmailUpdate"> <br /><br />
             <input type="submit" value="Update" name="updateCustomer"></p>
+        </form>
+
+        <hr />
+
+        <h2>Find Customers Who Spent Over a Certain Amount</h2>
+        <form method="GET" action="gaming-operations.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="customerSpentRequest" name="customerSpentRequest">
+            Find customers whose spending is more than $ <input type="text" name="totalSpentGames"> on games. <br /><br />
+            Find customers whose spending is more than $ <input type="text" name="totalSpentConsoles"> on consoles. <br /><br />
+            <input type="submit" value="Search" name="customerSpent"></p>
         </form>
 
         <hr />
@@ -380,6 +379,35 @@
             printCustomerResults($result);
         }
 
+        function handleSelectionRequest() {
+            global $db_conn;
+
+            $total_spent_games = $_GET['totalSpentGames'];
+            if ($total_spent_games == "") {
+                $total_spent_games = 0;
+            }
+            $total_spent_consoles = $_GET['totalSpentConsoles'];
+            if ($total_spent_consoles == "") {
+                $total_spent_consoles = 0;
+            }
+
+            $result = executePlainSQL("SELECT cid, firstName, lastName, spentOnGames, spentOnConsoles FROM Customer WHERE spentOnGames >'" . $total_spent_games . "' AND spentOnConsoles >'" . $total_spent_consoles . "'");
+            printCustomerMoreThan($result);
+        } 
+
+        function printCustomerMoreThan($result) {
+            echo "<br>Customers who have spent more than the specified amount:  <br>";
+            echo "<table>";
+            echo "<tr><th>Customer ID</th><th>First Name</th><th>Last Name</th><th>Spent On Games</th><th>Spent On Consoles</th></tr>";
+
+            while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
+                echo "<tr><td>" . $row[0] . "</td><td>" . $row[1] . "</td><td>" . $row[2] .
+                     "</td><td>" . $row[3] . "</td><td>" . $row[4] . "</td></tr>"; 
+            }
+
+            echo "</table>";
+        }
+
         function handleCustomerConsoles() {
             global $db_conn;
 
@@ -515,6 +543,8 @@
                     handleAllConsolesOwned();
                 } else if (array_key_exists('findCustomer', $_GET)) {
                     handleFindCustomerRequest();
+                } else if (array_key_exists('customerSpent', $_GET)) {
+                    handleSelectionRequest();
                 }
                 disconnectFromDB();
             }
@@ -526,7 +556,7 @@
         } else if (isset($_GET['countTupleRequest']) || isset($_GET['displayCustomersRequest'])
         || isset($_GET['averageSpendingRequest']) || isset($_GET['popularConsolesRequest'])
         || isset($_GET['customerConsolesRequest']) || isset($_GET['allConsolesOwnedRequest'])
-        || isset($_GET['findCustomerRequest'])) {
+        || isset($_GET['findCustomerRequest']) || isset($_GET['customerSpentRequest'])) {
             handleGETRequest();
         }
 		?>
